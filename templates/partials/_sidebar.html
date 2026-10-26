@@ -1,0 +1,72 @@
+<aside class="app-sidebar" id="appSidebar">
+    <a href="{% url 'dashboard:index' %}" class="sidebar-brand">
+        <i class="bi bi-shield-shaded"></i>
+        <span>SkyShield</span>
+    </a>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section-title">Core Operations</div>
+        <a href="{% url 'dashboard:index' %}" class="nav-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'incidents:report' %}" class="nav-link {% if request.resolver_match.url_name == 'report' %}active{% endif %}">
+            <i class="bi bi-plus-circle"></i>
+            <span>Report Incident</span>
+        </a>
+        <a href="{% url 'incidents:list' %}" class="nav-link {% if request.resolver_match.app_name == 'incidents' and request.resolver_match.url_name != 'report' %}active{% endif %}">
+            <i class="bi bi-journal-text"></i>
+            <span>Incident Register</span>
+        </a>
+
+        {% if is_investigator or is_safety_manager or is_administrator %}
+        <div class="nav-section-title">Safety Assurance</div>
+        <a href="{% url 'corrective_actions:list' %}" class="nav-link {% if request.resolver_match.app_name == 'corrective_actions' %}active{% endif %}">
+            <i class="bi bi-check2-square"></i>
+            <span>Action Tracking (CAPA)</span>
+        </a>
+        <a href="{% url 'risk_assessments:matrix' %}" class="nav-link {% if request.resolver_match.url_name == 'matrix' %}active{% endif %}">
+            <i class="bi bi-grid-3x3-gap"></i>
+            <span>Risk Matrix</span>
+        </a>
+        <a href="{% url 'reports:index' %}" class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
+            <i class="bi bi-file-earmark-bar-graph"></i>
+            <span>Reports & Exports</span>
+        </a>
+        {% endif %}
+
+        {% if is_administrator or is_safety_manager %}
+        <div class="nav-section-title">Governance & Audit</div>
+        {% if is_administrator %}
+        <a href="{% url 'accounts:user_list' %}" class="nav-link {% if request.resolver_match.app_name == 'accounts' and request.resolver_match.url_name == 'user_list' %}active{% endif %}">
+            <i class="bi bi-people"></i>
+            <span>User Management</span>
+        </a>
+        <a href="{% url 'risk_assessments:threshold_list' %}" class="nav-link {% if request.resolver_match.url_name == 'threshold_list' %}active{% endif %}">
+            <i class="bi bi-sliders"></i>
+            <span>Risk Thresholds</span>
+        </a>
+        {% endif %}
+        <a href="{% url 'audit:audit_log' %}" class="nav-link {% if request.resolver_match.app_name == 'audit' %}active{% endif %}">
+            <i class="bi bi-fingerprint"></i>
+            <span>Audit Trail</span>
+        </a>
+        {% if is_administrator %}
+        <a href="/admin/" target="_blank" class="nav-link">
+            <i class="bi bi-gear-wide-connected"></i>
+            <span>Django Admin</span>
+        </a>
+        {% endif %}
+        {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-person-circle fs-4 me-2 text-info"></i>
+            <div class="text-truncate">
+                <div class="fw-semibold text-white text-truncate">{{ request.user.get_full_name|default:request.user.username }}</div>
+                <div class="text-muted small">{{ user_role_display }}</div>
+            </div>
+        </div>
+    </div>
+</aside>

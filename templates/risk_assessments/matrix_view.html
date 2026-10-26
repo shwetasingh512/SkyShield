@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Aviation Risk Matrix & Thresholds &bull; SkyShield{% endblock %}
+{% block page_title %}Standard ICAO / FAA 5x5 Risk Assessment Matrix{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-navy text-white py-3" style="background-color: #0B1E36;">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-grid-3x3-gap-fill text-warning me-2"></i>Aviation Safety Risk Evaluation Matrix (5 &times; 5)
+                </h5>
+                <small class="text-white-50">Standard Likelihood &times; Severity Calculation (Score = L &times; S)</small>
+            </div>
+            <div class="card-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center align-middle mb-0">
+                        <thead>
+                            <tr class="table-light">
+                                <th rowspan="2" class="align-middle" style="width: 140px;">Likelihood</th>
+                                <th colspan="5">Severity of Worst Credible Outcome</th>
+                            </tr>
+                            <tr class="table-light small">
+                                <th>1<br><span class="text-muted fw-normal">Negligible</span></th>
+                                <th>2<br><span class="text-muted fw-normal">Minor</span></th>
+                                <th>3<br><span class="text-muted fw-normal">Moderate</span></th>
+                                <th>4<br><span class="text-muted fw-normal">Major</span></th>
+                                <th>5<br><span class="text-muted fw-normal">Catastrophic</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in matrix_data.matrix %}
+                            <tr>
+                                <th class="table-light text-start small">
+                                    {{ row.likelihood_label }}
+                                </th>
+                                {% for cell in row.cells %}
+                                <td style="background-color: {{ cell.color }}; color: #fff; height: 60px; font-weight: 700; width: 16%;">
+                                    <div class="fs-5 lh-1">{{ cell.score }}</div>
+                                    <div class="small fw-semibold opacity-75" style="font-size: 0.7rem;">{{ cell.level }}</div>
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Configured Risk Bands & Mandatory Actions -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-navy">
+                    <i class="bi bi-shield-fill text-primary me-2"></i>Operational Risk Bands
+                </h6>
+                {% if is_administrator %}
+                <a href="{% url 'risk_assessments:threshold_list' %}" class="btn btn-outline-secondary btn-sm">Configure</a>
+                {% endif %}
+            </div>
+            <div class="list-group list-group-flush">
+                {% for t in thresholds %}
+                <div class="list-group-item p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold" style="color: {{ t.color_code }};">
+                            <i class="bi bi-circle-fill me-1" style="font-size: 0.75rem;"></i>{{ t.get_band_name_display }}
+                        </span>
+                        <span class="badge bg-light text-dark border">Scores {{ t.min_score }} - {{ t.max_score }}</span>
+                    </div>
+                    <p class="small text-muted mb-2">{{ t.description }}</p>
+                    <div class="small bg-light p-2 rounded">
+                        <strong>Mandatory Action:</strong> {{ t.action_required }}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-3 text-muted small">No custom thresholds configured. Default bands active.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

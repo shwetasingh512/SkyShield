@@ -1,0 +1,6 @@
+Django>=5.1,<6.0
+pymysql>=1.1.0
+cryptography>=42.0.0
+python-dotenv>=1.0.1
+reportlab>=4.2.0
+Pillow>=10.3.0

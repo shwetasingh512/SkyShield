@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In &bull; SkyShield Safety Management{% endblock %}
+
+{% block auth_content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0 rounded-3">
+            <div class="card-header bg-navy text-white text-center py-4" style="background-color: #0B1E36;">
+                <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-circle bg-white bg-opacity-10 mb-3">
+                    <i class="bi bi-shield-shaded text-info fs-1"></i>
+                </div>
+                <h3 class="fw-bold mb-1">SkyShield</h3>
+                <p class="text-white-50 mb-0 small">Aviation Safety & Incident Reporting System</p>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">Username or ID</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                        <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-4">
+                        <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                        <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold mb-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Access Safety Portal
+                    </button>
+                </form>
+
+                <!-- Demo Quick Credentials Box -->
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">
+                        <i class="bi bi-info-circle me-1"></i>Demo Accounts (Password: <code>Password123!</code>)
+                    </h6>
+                    <div class="d-flex flex-wrap gap-1">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDemo('admin')">
+                            <span class="badge bg-danger me-1">Admin</span> admin
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDemo('safetymanager')">
+                            <span class="badge bg-warning text-dark me-1">Manager</span> safetymanager
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDemo('investigator')">
+                            <span class="badge bg-primary me-1">Investigator</span> investigator
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setDemo('reporter')">
+                            <span class="badge bg-secondary me-1">Reporter</span> reporter
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'accounts:register' %}" class="text-decoration-none small text-muted">
+                        Need an account? <span class="text-primary fw-semibold">Register as Reporter</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-3 text-muted small">
+            &copy; {% now "Y" %} SkyShield Aviation Safety. Internal Compliance & Educational Prototype.
+        </div>
+    </div>
+</div>
+
+<script>
+function setDemo(username) {
+    document.querySelector('input[name="username"]').value = username;
+    document.querySelector('input[name="password"]').value = 'Password123!';
+}
+</script>
+{% endblock %}

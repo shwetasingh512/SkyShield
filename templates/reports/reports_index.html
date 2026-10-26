@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Safety Reports & Regulatory Exports &bull; SkyShield{% endblock %}
+{% block page_title %}Safety Analytics & Regulatory Export Hub{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h4 class="fw-bold mb-1 text-navy">Safety Review, Compliance & Export Hub</h4>
+    <p class="text-muted small mb-0">Generate audited datasets for internal safety committee reviews, external aviation oversight, and ICAO SMS compliance.</p>
+</div>
+
+<div class="row g-4">
+    <!-- Card 1: Incident Master Export -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-inline-flex align-items-center justify-content-center p-3 rounded bg-primary bg-opacity-10 text-primary mb-3" style="width: 50px; height: 50px;">
+                    <i class="bi bi-file-earmark-spreadsheet fs-3"></i>
+                </div>
+                <h5 class="fw-bold text-navy mb-2">Incidents CSV Export</h5>
+                <p class="text-muted small flex-grow-1">
+                    Export complete occurrence records including reference codes, risk scores, aircraft identifiers, flight numbers, and severity classifications.
+                </p>
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                    <span class="badge bg-light text-dark border">{{ total_incidents }} Records</span>
+                    <a href="{% url 'reports:incidents_csv' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-download me-1"></i>Download CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: CAPA Register Export -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-inline-flex align-items-center justify-content-center p-3 rounded bg-success bg-opacity-10 text-success mb-3" style="width: 50px; height: 50px;">
+                    <i class="bi bi-check2-all fs-3"></i>
+                </div>
+                <h5 class="fw-bold text-navy mb-2">CAPA Actions Register</h5>
+                <p class="text-muted small flex-grow-1">
+                    Export all corrective and preventive actions, deadlines, assignees, overdue statuses, implementation evidence, and sign-offs.
+                </p>
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                    <span class="badge bg-light text-dark border">{{ total_capas }} Actions</span>
+                    <a href="{% url 'reports:capa_csv' %}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-download me-1"></i>Download CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Audit Trail Export -->
+    {% if is_safety_manager or is_administrator %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-inline-flex align-items-center justify-content-center p-3 rounded bg-warning bg-opacity-10 text-warning mb-3" style="width: 50px; height: 50px;">
+                    <i class="bi bi-fingerprint fs-3"></i>
+                </div>
+                <h5 class="fw-bold text-navy mb-2">Security Audit Trail</h5>
+                <p class="text-muted small flex-grow-1">
+                    Immutable security log capturing system logins, data modifications, risk reassessments, status overrides, and user access events.
+                </p>
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                    <span class="badge bg-light text-dark border">Security Audit</span>
+                    <a href="{% url 'reports:audit_csv' %}" class="btn btn-outline-warning btn-sm text-dark">
+                        <i class="bi bi-download me-1"></i>Download CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Notice regarding Regulatory Stature -->
+<div class="alert alert-light border shadow-sm p-4 mt-5">
+    <div class="d-flex align-items-start">
+        <i class="bi bi-info-circle-fill text-primary fs-3 me-3 mt-1"></i>
+        <div>
+            <h6 class="fw-bold text-navy mb-1">Notice on Exported Regulatory Records</h6>
+            <p class="text-muted small mb-0">
+                SkyShield is configured to align with standard ICAO Doc 9859 Safety Management Manual (SMM) and FAA 14 CFR Part 5 structures. Reports and exports generated from this platform serve as internal safety review and audit preparation materials. This installation operates as an educational and demonstration portfolio system.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

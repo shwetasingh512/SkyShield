@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Risk Band Thresholds &bull; SkyShield{% endblock %}
+{% block page_title %}Risk Band Configuration{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="fw-bold mb-0 text-navy">Configured Risk Bands & Operational Protocols</h6>
+            <small class="text-muted">Modify numeric boundaries, warning thresholds, and mandated escalation procedures.</small>
+        </div>
+        <a href="{% url 'risk_assessments:matrix' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-grid-3x3-gap me-1"></i>View 5x5 Matrix
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-custom">
+            <thead>
+                <tr>
+                    <th>Band Name</th>
+                    <th>Score Range</th>
+                    <th>Color Indicator</th>
+                    <th>Operational Impact</th>
+                    <th>Mandatory Protocol</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in thresholds %}
+                <tr>
+                    <td class="fw-bold">
+                        <span class="badge" style="background-color: {{ t.color_code }}; color: #fff;">
+                            {{ t.band_name }}
+                        </span>
+                    </td>
+                    <td class="fw-semibold">{{ t.min_score }} &ndash; {{ t.max_score }}</td>
+                    <td>
+                        <span class="d-inline-block rounded-circle me-1" style="width: 14px; height: 14px; background-color: {{ t.color_code }}; vertical-align: middle;"></span>
+                        <code>{{ t.color_code }}</code>
+                    </td>
+                    <td class="small" style="max-width: 250px;">{{ t.description }}</td>
+                    <td class="small" style="max-width: 250px;">{{ t.action_required }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'risk_assessments:threshold_edit' t.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-pencil me-1"></i>Edit
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">No custom thresholds in database. Default thresholds apply.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

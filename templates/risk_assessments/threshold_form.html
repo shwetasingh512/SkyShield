@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Risk Threshold &bull; SkyShield{% endblock %}
+{% block page_title %}Edit Risk Band: {{ config.get_band_name_display }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-navy text-white py-3" style="background-color: #0B1E36;">
+                <h5 class="fw-bold mb-0">Edit Risk Band Configuration</h5>
+                <small class="text-white-50">{{ config.get_band_name_display }}</small>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Band Identifier *</label>
+                        {{ form.band_name }}
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Minimum Score (1-25) *</label>
+                            {{ form.min_score }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Maximum Score (1-25) *</label>
+                            {{ form.max_score }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Color Code (Hex / CSS) *</label>
+                        {{ form.color_code }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Operational Description *</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Mandatory Response Protocol *</label>
+                        {{ form.action_required }}
+                    </div>
+                    <div class="d-flex justify-content-between pt-3 border-top">
+                        <a href="{% url 'risk_assessments:threshold_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary fw-semibold">Save Threshold Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

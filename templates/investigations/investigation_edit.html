@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Investigation Findings &bull; SkyShield{% endblock %}
+{% block page_title %}Update Findings: {{ incident.reference_number }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-navy text-white py-3" style="background-color: #0B1E36;">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-pencil-square text-info me-2"></i>Update Investigation Findings & Evidence
+                </h5>
+                <small class="text-white-50">Incident #{{ incident.reference_number }} &bull; {{ incident.title }}</small>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Investigation Scope & Objectives *</label>
+                        {{ form.objectives }}
+                        {% if form.objectives.errors %}<div class="text-danger small">{{ form.objectives.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Established Factual Findings</label>
+                        {{ form.findings }}
+                        {% if form.findings.errors %}<div class="text-danger small">{{ form.findings.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Evidence, Telemetry & Recordings Reviewed</label>
+                        {{ form.evidence_reviewed }}
+                        {% if form.evidence_reviewed.errors %}<div class="text-danger small">{{ form.evidence_reviewed.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Proposed Root Causes</label>
+                        {{ form.proposed_root_causes }}
+                        {% if form.proposed_root_causes.errors %}<div class="text-danger small">{{ form.proposed_root_causes.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Investigator Working Notes & Witness Summaries</label>
+                        {{ form.investigator_notes }}
+                        {% if form.investigator_notes.errors %}<div class="text-danger small">{{ form.investigator_notes.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between pt-3 border-top">
+                        <a href="{% url 'investigations:workspace' incident.id %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary fw-semibold">
+                            <i class="bi bi-check2-circle me-1"></i>Save Investigation Findings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

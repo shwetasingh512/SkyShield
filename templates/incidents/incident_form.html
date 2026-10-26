@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if is_create %}Report Safety Incident{% else %}Edit Incident #{{ incident.reference_number }}{% endif %} &bull; SkyShield
+{% endblock %}
+
+{% block page_title %}
+    {% if is_create %}Submit Aviation Incident / Hazard Report{% else %}Edit Incident #{{ incident.reference_number }}{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-navy text-white py-3" style="background-color: #0B1E36;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-shield-plus text-info me-2"></i>
+                            {% if is_create %}Mandatory Occurrence & Hazard Reporting Form{% else %}Edit Incident Record: {{ incident.reference_number }}{% endif %}
+                        </h5>
+                        <small class="text-white-50">ICAO Annex 13 / FAA Part 5 Safety Incident Submission Protocol</small>
+                    </div>
+                    {% if not is_create %}
+                    <span class="badge {{ incident.status_badge_class }}">{{ incident.get_status_display }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Section 1: Core Operational Details -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-navy border-bottom pb-2 mb-3">
+                            <i class="bi bi-geo-alt-fill text-primary me-2"></i>1. Flight & Operational Context
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Incident Title *</label>
+                                {{ form.title }}
+                                {% if form.title.errors %}<div class="text-danger small">{{ form.title.errors.0 }}</div>{% endif %}
+                                <div class="form-text small">Concise, objective summary of the event (e.g. "Runway incursion at taxiway Bravo during heavy rain").</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Incident Category *</label>
+                                {{ form.incident_type }}
+                                {% if form.incident_type.errors %}<div class="text-danger small">{{ form.incident_type.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Date & Time of Occurrence (UTC) *</label>
+                                {{ form.occurrence_date }}
+                                {% if form.occurrence_date.errors %}<div class="text-danger small">{{ form.occurrence_date.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Airport / Facility / Airspace Location *</label>
+                                {{ form.location }}
+                                {% if form.location.errors %}<div class="text-danger small">{{ form.location.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Aircraft Registration</label>
+                                {{ form.aircraft_registration }}
+                                {% if form.aircraft_registration.errors %}<div class="text-danger small">{{ form.aircraft_registration.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Flight Number</label>
+                                {{ form.flight_number }}
+                                {% if form.flight_number.errors %}<div class="text-danger small">{{ form.flight_number.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Narrative & Sequences -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-navy border-bottom pb-2 mb-3">
+                            <i class="bi bi-card-text text-primary me-2"></i>2. Factual Narrative & Consequences
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Occurrence Description *</label>
+                                {{ form.description }}
+                                {% if form.description.errors %}<div class="text-danger small">{{ form.description.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Immediate Actions Taken</label>
+                                {{ form.immediate_actions_taken }}
+                                {% if form.immediate_actions_taken.errors %}<div class="text-danger small">{{ form.immediate_actions_taken.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Actual Consequences Observed</label>
+                                {{ form.actual_consequences }}
+                                {% if form.actual_consequences.errors %}<div class="text-danger small">{{ form.actual_consequences.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Potential Worst-Case Consequences</label>
+                                {{ form.potential_consequences }}
+                                {% if form.potential_consequences.errors %}<div class="text-danger small">{{ form.potential_consequences.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Initial Risk Rating Engine -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-navy border-bottom pb-2 mb-3">
+                            <i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>3. Preliminary Risk Classification Matrix
+                        </h6>
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Likelihood of Occurrence (1-5) *</label>
+                                {{ form.initial_likelihood }}
+                                {% if form.initial_likelihood.errors %}<div class="text-danger small">{{ form.initial_likelihood.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-semibold">Severity of Worst Credible Outcome (1-5) *</label>
+                                {{ form.initial_severity }}
+                                {% if form.initial_severity.errors %}<div class="text-danger small">{{ form.initial_severity.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <label class="form-label small fw-semibold text-muted d-block">Calculated Band</label>
+                                <span id="liveRiskScoreBadge" class="badge bg-secondary px-3 py-2 fs-6">
+                                    <span id="liveRiskScoreText">1 / 25 (LOW)</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Initial Evidence Attachment (Optional) -->
+                    {% if is_create and attachment_form %}
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-navy border-bottom pb-2 mb-3">
+                            <i class="bi bi-paperclip text-primary me-2"></i>4. Supporting Evidence / Attachments (Optional)
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Evidence File (PDF, Image, FDR log)</label>
+                                {{ attachment_form.file }}
+                                {% if attachment_form.file.errors %}<div class="text-danger small">{{ attachment_form.file.errors.0 }}</div>{% endif %}
+                                <div class="form-text small">Permitted formats: .pdf, .jpg, .png, .txt, .csv, .doc, .docx (Max 10 MB).</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Attachment Description</label>
+                                {{ attachment_form.description }}
+                                {% if attachment_form.description.errors %}<div class="text-danger small">{{ attachment_form.description.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Form Controls -->
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a href="{% if is_create %}{% url 'incidents:list' %}{% else %}{% url 'incidents:detail' incident.id %}{% endif %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+                            <i class="bi bi-check2-circle me-1"></i>
+                            {% if is_create %}Submit Incident Report{% else %}Save Changes{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

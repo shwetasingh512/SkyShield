@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+
+{% block title %}Investigation Workspace: {{ incident.reference_number }} &bull; SkyShield{% endblock %}
+{% block page_title %}Formal Safety Investigation: {{ incident.reference_number }}{% endblock %}
+
+{% block content %}
+<!-- Investigation Header Banner -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="fs-4 fw-bold text-navy">{{ incident.reference_number }}</span>
+                    <span class="badge {{ investigation.status_badge_class }} fs-6">{{ investigation.get_status_display }}</span>
+                    <span class="badge bg-light text-dark border"><i class="bi bi-person-badge me-1"></i>Investigator: {{ investigation.investigator.get_full_name|default:investigation.investigator.username }}</span>
+                </div>
+                <h4 class="fw-bold text-navy mb-1">{{ incident.title }}</h4>
+                <div class="text-muted small">
+                    Investigation Started: <strong>{{ investigation.start_date|date:"Y-m-d" }}</strong> &bull;
+                    Completion Date: <strong>{{ investigation.completion_date|default:"Underway" }}</strong> &bull;
+                    Incident Location: <strong>{{ incident.location }}</strong>
+                </div>
+            </div>
+
+            <!-- Investigator Action Toolbar -->
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'incidents:detail' incident.id %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Incident Dossier
+                </a>
+                {% if can_edit %}
+                <a href="{% url 'investigations:edit' incident.id %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Edit Findings
+                </a>
+                <a href="{% url 'investigations:rca' incident.id %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-diagram-2 me-1"></i>5-Whys Root Cause Analysis
+                </a>
+                {% if investigation.status == 'DRAFT' %}
+                <form method="post" action="{% url 'investigations:submit' incident.id %}" onsubmit="return confirm('Submit this completed investigation for Safety Manager review?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-send-check me-1"></i>Submit for Review
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Safety Manager Review Decision Panel -->
+{% if is_safety_manager or is_administrator %}
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-light border-start border-4 border-warning">
+    <div class="card-body p-4">
+        <h6 class="fw-bold text-navy mb-2"><i class="bi bi-shield-check text-warning me-2"></i>Safety Manager Quality Review & Sign-Off</h6>
+        <form method="post" action="{% url 'investigations:review' incident.id %}">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold">Review Determination *</label>
+                    {{ review_form.status }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Review Critique & Endorsement Comments *</label>
+                    {{ review_form.review_comments }}
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-warning w-100 fw-semibold text-dark">
+                        <i class="bi bi-check-circle me-1"></i>Sign Review
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% if investigation.reviewed_by %}
+        <div class="small text-muted mt-2">
+            Last signed by <strong>{{ investigation.reviewed_by.username }}</strong> on {{ investigation.reviewed_at|date:"Y-m-d H:i" }} UTC.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Left Column: Objectives, Findings & 5 Whys -->
+    <div class="col-lg-8">
+        <!-- Findings & Scope -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-navy"><i class="bi bi-journal-check text-primary me-2"></i>Investigative Scope & Established Findings</h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-4">
+                    <h6 class="small fw-bold text-navy">Investigation Scope & Objectives:</h6>
+                    <p class="text-secondary small">{{ investigation.objectives|linebreaksbr }}</p>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="small fw-bold text-navy">Factual Findings:</h6>
+                    {% if investigation.findings %}
+                    <p class="text-secondary small bg-light p-3 rounded">{{ investigation.findings|linebreaksbr }}</p>
+                    {% else %}
+                    <p class="text-muted small italic">No findings documented yet. Use "Edit Findings" above to record observations.</p>
+                    {% endif %}
+                </div>
+
+                <div class="row g-3 pt-3 border-top">
+                    <div class="col-md-6">
+                        <h6 class="small fw-bold text-navy mb-1"><i class="bi bi-database-check me-1"></i>Telemetry & Evidence Examined</h6>
+                        <p class="small text-muted mb-0">{{ investigation.evidence_reviewed|default:"No telemetry logs logged." }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="small fw-bold text-navy mb-1"><i class="bi bi-lightbulb-fill text-warning me-1"></i>Proposed Root Causes</h6>
+                        <p class="small text-muted mb-0">{{ investigation.proposed_root_causes|default:"Pending analysis." }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Structured 5-Whys Root Cause Analysis (RCA) -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-navy">
+                    <i class="bi bi-diagram-2 text-info me-2"></i>Structured 5-Whys Root Cause Analysis
+                </h6>
+                {% if can_edit %}
+                <a href="{% url 'investigations:rca' incident.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i>{% if rca %}Edit 5-Whys{% else %}Create 5-Whys{% endif %}
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-4">
+                {% if rca %}
+                <div class="mb-3">
+                    <span class="badge bg-secondary mb-1">Problem Statement</span>
+                    <div class="fw-semibold text-navy">{{ rca.problem_statement }}</div>
+                </div>
+
+                <div class="timeline ps-3 my-4">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <span class="badge bg-light text-dark border">Why 1 (Immediate Trigger)</span>
+                        <div class="small mt-1">{{ rca.why_1 }}</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <span class="badge bg-light text-dark border">Why 2 (Condition)</span>
+                        <div class="small mt-1">{{ rca.why_2 }}</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <span class="badge bg-light text-dark border">Why 3 (Underlying Factor)</span>
+                        <div class="small mt-1">{{ rca.why_3 }}</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <span class="badge bg-light text-dark border">Why 4 (Barrier Breakdown)</span>
+                        <div class="small mt-1">{{ rca.why_4 }}</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-danger"></div>
+                        <span class="badge bg-danger text-white">Why 5 (Latent Systemic Root Cause)</span>
+                        <div class="small fw-bold mt-1 text-danger">{{ rca.why_5 }}</div>
+                    </div>
+                </div>
+
+                <div class="bg-light p-3 rounded border">
+                    <div class="mb-2">
+                        <h6 class="small fw-bold text-navy mb-1"><i class="bi bi-shield-exclamation text-danger me-1"></i>Systemic Root Cause Summary:</h6>
+                        <p class="small text-secondary mb-0">{{ rca.root_cause_summary }}</p>
+                    </div>
+                    <div>
+                        <h6 class="small fw-bold text-navy mb-1"><i class="bi bi-shield-check text-success me-1"></i>Preventive Recommendation:</h6>
+                        <p class="small text-secondary mb-0">{{ rca.preventive_recommendation }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-diagram-2 fs-1 text-secondary d-block mb-2"></i>
+                    <h6>No 5-Whys Root Cause Analysis recorded yet</h6>
+                    <p class="small mb-3">Execute structured inquiry to uncover systemic organizational failure modes.</p>
+                    {% if can_edit %}
+                    <a href="{% url 'investigations:rca' incident.id %}" class="btn btn-primary btn-sm">Launch 5-Whys Analysis</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Contributing Factors & Quick Info -->
+    <div class="col-lg-4">
+        <!-- Contributing Factors Register -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-navy">
+                    <i class="bi bi-tags text-warning me-2"></i>Contributing Factors
+                </h6>
+                {% if can_edit %}
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addFactorModal">
+                    <i class="bi bi-plus me-1"></i>Add
+                </button>
+                {% endif %}
+            </div>
+            <div class="list-group list-group-flush">
+                {% for factor in factors %}
+                <div class="list-group-item p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                        <span class="badge bg-light text-dark border small">{{ factor.get_category_display }}</span>
+                        <span class="badge {% if factor.impact_level == 'PRIMARY' %}bg-danger{% elif factor.impact_level == 'SECONDARY' %}bg-warning text-dark{% else %}bg-secondary{% endif %} small">
+                            {{ factor.get_impact_level_display }}
+                        </span>
+                    </div>
+                    <p class="small text-secondary mb-2">{{ factor.description }}</p>
+                    {% if can_edit %}
+                    <form method="post" action="{% url 'investigations:delete_factor' factor.id %}" class="text-end" onsubmit="return confirm('Delete this factor?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link btn-sm text-danger p-0 text-decoration-none small">
+                            <i class="bi bi-trash me-1"></i>Remove
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="p-3 text-center text-muted small">No contributing factors categorized.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Investigator Working Notes -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-navy"><i class="bi bi-sticky text-info me-2"></i>Internal Working Notes</h6>
+            </div>
+            <div class="card-body p-3">
+                <p class="small text-secondary mb-0">{{ investigation.investigator_notes|default:"No working notes recorded."|linebreaksbr }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Contributing Factor -->
+<div class="modal fade" id="addFactorModal" tabindex="-1" aria-labelledby="addFactorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'investigations:create_factor' incident.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addFactorModalLabel">Add Contributing Factor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Factor Category *</label>
+                        {{ factor_form.category }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Impact Level *</label>
+                        {{ factor_form.impact_level }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description *</label>
+                        {{ factor_form.description }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Factor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

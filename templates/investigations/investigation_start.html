@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Initiate Safety Investigation &bull; SkyShield{% endblock %}
+{% block page_title %}Initiate Safety Investigation: {{ incident.reference_number }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-navy text-white py-3" style="background-color: #0B1E36;">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-play-circle text-info me-2"></i>Initiate Safety Investigation
+                </h5>
+                <small class="text-white-50">Incident #{{ incident.reference_number }} &bull; {{ incident.title }}</small>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Investigation Start Date *</label>
+                        {{ form.start_date }}
+                        {% if form.start_date.errors %}<div class="text-danger small">{{ form.start_date.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Investigation Scope & Objectives *</label>
+                        {{ form.objectives }}
+                        {% if form.objectives.errors %}<div class="text-danger small">{{ form.objectives.errors.0 }}</div>{% endif %}
+                        <div class="form-text small">Define investigation boundaries, regulatory mandates (Annex 13 / Part 5), and preliminary lines of inquiry.</div>
+                    </div>
+                    <div class="d-flex justify-content-between pt-3 border-top">
+                        <a href="{% url 'incidents:detail' incident.id %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary fw-semibold">
+                            <i class="bi bi-check2-circle me-1"></i>Create Investigation Workspace
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

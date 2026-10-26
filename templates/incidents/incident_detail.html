@@ -1,0 +1,410 @@
+{% extends 'base.html' %}
+
+{% block title %}[{{ incident.reference_number }}] {{ incident.title }} &bull; SkyShield{% endblock %}
+{% block page_title %}Incident Dossier: {{ incident.reference_number }}{% endblock %}
+
+{% block content %}
+<!-- Dossier Header Banner -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="fs-4 fw-bold text-navy">{{ incident.reference_number }}</span>
+                    <span class="badge bg-light text-dark border">{{ incident.get_incident_type_display }}</span>
+                    <span class="badge {{ incident.risk_badge_class }} fs-6">Risk: {{ incident.risk_level }} ({{ incident.risk_score }}/25)</span>
+                    <span class="badge {{ incident.status_badge_class }} fs-6">{{ incident.get_status_display }}</span>
+                </div>
+                <h4 class="fw-bold text-navy mb-1">{{ incident.title }}</h4>
+                <div class="text-muted small">
+                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ incident.location }} &bull;
+                    <i class="bi bi-clock-fill text-primary ms-2 me-1"></i>{{ incident.occurrence_date|date:"Y-m-d H:i" }} UTC &bull;
+                    <i class="bi bi-person-fill text-secondary ms-2 me-1"></i>Reported by {{ incident.reporter.get_full_name|default:incident.reporter.username }}
+                </div>
+            </div>
+
+            <!-- Action Toolbar -->
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'reports:incident_pdf' incident.id %}" class="btn btn-outline-danger btn-sm d-flex align-items-center">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>PDF Dossier
+                </a>
+                {% if is_safety_manager or is_administrator or incident.reporter == request.user %}
+                <a href="{% url 'incidents:edit' incident.id %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </a>
+                {% endif %}
+                {% if is_safety_manager or is_investigator or is_administrator %}
+                <a href="{% url 'risk_assessments:create' incident.id %}" class="btn btn-outline-primary btn-sm d-flex align-items-center">
+                    <i class="bi bi-shield-check me-1"></i>Re-assess Risk
+                </a>
+                <a href="{% url 'corrective_actions:create' incident.id %}" class="btn btn-outline-success btn-sm d-flex align-items-center">
+                    <i class="bi bi-plus-square me-1"></i>Assign CAPA
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Workflow Transition & Assignment Panel (Managers / Admins) -->
+{% if is_safety_manager or is_administrator %}
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-light border-start border-4 border-primary">
+    <div class="card-body p-3">
+        <div class="row g-3 align-items-center">
+            <!-- Investigator Assignment Form -->
+            <div class="col-lg-5 border-end-lg">
+                <form method="post" action="{% url 'incidents:assign_investigator' incident.id %}" class="d-flex align-items-center gap-2">
+                    {% csrf_token %}
+                    <label class="form-label small fw-bold text-nowrap mb-0"><i class="bi bi-person-badge text-primary me-1"></i>Investigator:</label>
+                    {{ assign_form.assigned_investigator }}
+                    <button type="submit" class="btn btn-primary btn-sm text-nowrap">Assign</button>
+                </form>
+            </div>
+
+            <!-- Workflow Status Transition Form -->
+            <div class="col-lg-7">
+                <form method="post" action="{% url 'incidents:transition' incident.id %}" class="row g-2 align-items-center">
+                    {% csrf_token %}
+                    <div class="col-auto">
+                        <label class="form-label small fw-bold text-nowrap mb-0"><i class="bi bi-arrow-repeat text-success me-1"></i>Transition Status:</label>
+                    </div>
+                    <div class="col-md-3">
+                        {{ transition_form.to_status }}
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" name="notes" class="form-control form-control-sm" placeholder="Transition notes...">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-success btn-sm">Update Status</button>
+                    </div>
+                </form>
+                {% if not can_close %}
+                <div class="small text-danger mt-1">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Closure is guarded: {{ closure_reasons.0 }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Left Column: Details & Investigation & CAPA -->
+    <div class="col-lg-8">
+        <!-- Occurrence Narrative Card -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-navy"><i class="bi bi-card-text text-primary me-2"></i>Occurrence Narrative & Sequence</h6>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-secondary lh-lg mb-4">{{ incident.description|linebreaksbr }}</p>
+
+                <div class="row g-3 pt-3 border-top">
+                    <div class="col-md-6">
+                        <h6 class="small fw-bold text-navy mb-1"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Immediate Containment Actions Taken</h6>
+                        <p class="small text-muted mb-0">{{ incident.immediate_actions_taken|default:"No immediate containment recorded." }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="small fw-bold text-navy mb-1"><i class="bi bi-exclamation-circle text-info me-1"></i>Actual Observed Consequences</h6>
+                        <p class="small text-muted mb-0">{{ incident.actual_consequences|default:"None observed or negligible operational delay." }}</p>
+                    </div>
+                    {% if incident.potential_consequences %}
+                    <div class="col-12 mt-3 pt-2 border-top">
+                        <h6 class="small fw-bold text-danger mb-1"><i class="bi bi-shield-slash-fill me-1"></i>Potential Worst-Case Consequences</h6>
+                        <p class="small text-muted mb-0">{{ incident.potential_consequences }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Investigation Workspace Status Card -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-navy">
+                    <i class="bi bi-search text-primary me-2"></i>Formal Safety Investigation
+                </h6>
+                {% if incident.has_investigation %}
+                <span class="badge {{ incident.investigation.status_badge_class }}">
+                    {{ incident.investigation.get_status_display }}
+                </span>
+                {% else %}
+                <span class="badge bg-secondary">Not Started</span>
+                {% endif %}
+            </div>
+            <div class="card-body p-4">
+                {% if incident.has_investigation %}
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <span class="text-muted small">Lead Investigator:</span>
+                        <div class="fw-semibold">{{ incident.investigation.investigator.get_full_name|default:incident.investigation.investigator.username }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <span class="text-muted small">Investigation Dates:</span>
+                        <div class="fw-semibold">{{ incident.investigation.start_date|date:"Y-m-d" }} &bull; Completed: {{ incident.investigation.completion_date|default:"In Progress" }}</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="small fw-bold text-navy mb-1">Investigation Scope & Objectives</h6>
+                    <p class="small text-muted">{{ incident.investigation.objectives }}</p>
+                </div>
+
+                {% if incident.investigation.findings %}
+                <div class="mb-3">
+                    <h6 class="small fw-bold text-navy mb-1">Key Findings Summary</h6>
+                    <p class="small text-muted">{{ incident.investigation.findings|truncatewords:60 }}</p>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2">
+                    <a href="{% url 'investigations:workspace' incident.id %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Open Investigation Workspace
+                    </a>
+                    {% if incident.investigation.root_cause_analysis %}
+                    <a href="{% url 'investigations:rca' incident.id %}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-diagram-2 me-1"></i>5-Whys RCA (Complete)
+                    </a>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <p class="text-muted small mb-3">No formal investigation initiated for this incident.</p>
+                    {% if is_safety_manager or is_investigator or is_administrator %}
+                    <a href="{% url 'investigations:start' incident.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-play-circle me-1"></i>Initiate Formal Investigation
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Corrective & Preventive Action Register (CAPA) -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-navy">
+                    <i class="bi bi-check2-square text-success me-2"></i>Corrective & Preventive Actions (CAPA)
+                </h6>
+                {% if is_safety_manager or is_investigator or is_administrator %}
+                <a href="{% url 'corrective_actions:create' incident.id %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Add Action
+                </a>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Action Title</th>
+                            <th>Priority</th>
+                            <th>Assignee</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for capa in corrective_actions %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'corrective_actions:detail' capa.id %}" class="fw-semibold text-decoration-none text-navy">
+                                    {{ capa.title }}
+                                </a>
+                                <div class="small text-muted">{{ capa.get_action_type_display }}</div>
+                            </td>
+                            <td>
+                                <span class="badge {{ capa.priority_badge_class }}">{{ capa.get_priority_display }}</span>
+                            </td>
+                            <td class="small">{{ capa.responsible_user.username }}</td>
+                            <td class="small text-nowrap {% if capa.is_overdue %}text-danger fw-bold{% endif %}">
+                                {{ capa.due_date|date:"Y-m-d" }}
+                                {% if capa.is_overdue %}<span class="badge bg-danger ms-1">OVERDUE</span>{% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {{ capa.status_badge_class }}">{{ capa.get_status_display }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3 text-muted small">
+                                No corrective or preventive actions recorded yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Evidence Attachments Card -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-navy">
+                    <i class="bi bi-paperclip text-primary me-2"></i>Supporting Evidence & Telemetry Files
+                </h6>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadAttachmentModal">
+                    <i class="bi bi-cloud-upload me-1"></i>Upload File
+                </button>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for att in attachments %}
+                <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-file-earmark-text text-primary fs-3 me-3"></i>
+                        <div>
+                            <div class="fw-semibold">{{ att.filename }}</div>
+                            <small class="text-muted">
+                                {{ att.file_size_display }} &bull; Uploaded by {{ att.uploaded_by.username|default:"System" }} on {{ att.uploaded_at|date:"M d, Y" }}
+                                {% if att.description %}&bull; <em>{{ att.description }}</em>{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'incidents:download_attachment' att.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i>
+                        </a>
+                        {% if is_safety_manager or is_administrator or att.uploaded_by == request.user %}
+                        <form method="post" action="{% url 'incidents:delete_attachment' att.id %}" onsubmit="return confirm('Delete this evidence file?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="p-4 text-center text-muted small">
+                    <i class="bi bi-file-earmark-x fs-2 d-block text-secondary mb-1"></i>
+                    No evidence files attached yet.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Risk Matrix, Flight Meta & Timeline -->
+    <div class="col-lg-4">
+        <!-- 5x5 Risk Matrix Coordinate Card -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-navy">
+                    <i class="bi bi-grid-3x3-gap-fill text-warning me-2"></i>Risk Matrix Evaluation
+                </h6>
+            </div>
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2 small">
+                    <span>Likelihood: <strong>{{ incident.initial_likelihood }}/5</strong></span>
+                    <span>Severity: <strong>{{ incident.initial_severity }}/5</strong></span>
+                    <span class="badge {{ incident.risk_badge_class }}">Score: {{ incident.risk_score }}</span>
+                </div>
+
+                <!-- Visual 5x5 Grid with Coordinate Highlight -->
+                <table class="risk-matrix-table mb-2">
+                    {% for row in matrix_data.matrix %}
+                    <tr>
+                        {% for cell in row.cells %}
+                        <td class="risk-matrix-cell {% if cell.likelihood == incident.initial_likelihood and cell.severity == incident.initial_severity %}active-cell{% endif %}"
+                            style="background-color: {{ cell.color }};"
+                            title="L:{{ cell.likelihood }} x S:{{ cell.severity }} = {{ cell.score }} ({{ cell.level }})">
+                            <span class="cell-score">{{ cell.score }}</span>
+                            <span class="cell-level">{{ cell.level|slice:":3" }}</span>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </table>
+                <div class="d-flex justify-content-between text-muted" style="font-size: 0.7rem;">
+                    <span>&larr; Severity 1 (Negligible)</span>
+                    <span>Severity 5 (Catastrophic) &rarr;</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operational Context Card -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-navy"><i class="bi bi-airplane-fill text-primary me-2"></i>Aircraft & Aerodrome Data</h6>
+            </div>
+            <div class="card-body p-3 small">
+                <ul class="list-unstyled mb-0">
+                    <li class="py-2 border-bottom d-flex justify-content-between">
+                        <span class="text-muted">Aircraft Tail:</span>
+                        <span class="fw-semibold">{{ incident.aircraft_registration|default:"N/A" }}</span>
+                    </li>
+                    <li class="py-2 border-bottom d-flex justify-content-between">
+                        <span class="text-muted">Flight Number:</span>
+                        <span class="fw-semibold">{{ incident.flight_number|default:"N/A" }}</span>
+                    </li>
+                    <li class="py-2 border-bottom d-flex justify-content-between">
+                        <span class="text-muted">Location:</span>
+                        <span class="fw-semibold">{{ incident.location }}</span>
+                    </li>
+                    <li class="py-2 border-bottom d-flex justify-content-between">
+                        <span class="text-muted">Report Timestamp:</span>
+                        <span>{{ incident.reported_at|date:"Y-m-d H:i" }} UTC</span>
+                    </li>
+                    <li class="py-2 d-flex justify-content-between">
+                        <span class="text-muted">Last Updated:</span>
+                        <span>{{ incident.updated_at|date:"Y-m-d H:i" }} UTC</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Status History & Audit Timeline -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold mb-0 text-navy"><i class="bi bi-clock-history text-info me-2"></i>Lifecycle Timeline</h6>
+            </div>
+            <div class="card-body p-3">
+                <div class="timeline">
+                    {% for h in status_history %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="small fw-bold text-navy">{{ h.to_status }}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">
+                            {{ h.timestamp|date:"M d, H:i" }} &bull; by {{ h.changed_by.username }}
+                        </div>
+                        {% if h.notes %}
+                        <div class="small bg-light p-2 rounded mt-1 text-secondary">{{ h.notes }}</div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="small text-muted">No state transitions recorded.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Attachment Modal -->
+<div class="modal fade" id="uploadAttachmentModal" tabindex="-1" aria-labelledby="uploadAttachmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'incidents:upload_attachment' incident.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadAttachmentModalLabel">Upload Supporting Evidence</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Evidence File *</label>
+                        {{ attachment_form.file }}
+                        <div class="form-text small">Accepted: PDF, Images, Text, DOC, CSV, Excel (Up to 10 MB).</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description / Label</label>
+                        {{ attachment_form.description }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Upload Evidence</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

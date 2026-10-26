@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}Incident Register &bull; SkyShield Safety Management{% endblock %}
+{% block page_title %}Incident & Hazard Register{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h4 class="fw-bold mb-1 text-navy">Flight Safety & Hazard Register</h4>
+        <p class="text-muted small mb-0">Searchable, filterable archive of reported occurrences, telemetry, and status.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'reports:incidents_csv' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
+            <i class="bi bi-download me-1"></i>Export CSV
+        </a>
+        <a href="{% url 'incidents:report' %}" class="btn btn-primary btn-sm d-flex align-items-center">
+            <i class="bi bi-plus-circle me-1"></i>New Incident Report
+        </a>
+    </div>
+</div>
+
+<!-- Search & Multi-Filter Card -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <!-- Search Query -->
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Search Keywords</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Ref #, location, flight..." value="{{ search_query }}">
+                </div>
+            </div>
+
+            <!-- Category Filter -->
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Category</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for cat_val, cat_label in type_choices %}
+                    <option value="{{ cat_val }}" {% if category_filter == cat_val %}selected{% endif %}>{{ cat_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for stat_val, stat_label in status_choices %}
+                    <option value="{{ stat_val }}" {% if status_filter == stat_val %}selected{% endif %}>{{ stat_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Severity Filter -->
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold text-muted mb-1">Severity</label>
+                <select name="severity" class="form-select form-select-sm">
+                    <option value="">All Severities</option>
+                    {% for sev_val, sev_label in severity_choices %}
+                    <option value="{{ sev_val }}" {% if severity_filter == sev_val|stringformat:"s" %}selected{% endif %}>{{ sev_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Date From -->
+            <div class="col-md-1">
+                <label class="form-label small fw-semibold text-muted mb-1">From Date</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+            </div>
+
+            <!-- Date To -->
+            <div class="col-md-1">
+                <label class="form-label small fw-semibold text-muted mb-1">To Date</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-primary btn-sm w-100" title="Apply Filters">
+                    <i class="bi bi-funnel-fill"></i>
+                </button>
+                <a href="{% url 'incidents:list' %}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Incidents Table Card -->
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-navy">
+            Registered Occurrences <span class="badge bg-secondary ms-2">{{ total_count }} total</span>
+        </h6>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-arrow-down-up me-1"></i>Sort By
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li><a class="dropdown-item {% if sort_by == '-occurrence_date' %}active{% endif %}" href="?sort=-occurrence_date">Date (Newest First)</a></li>
+                <li><a class="dropdown-item {% if sort_by == 'occurrence_date' %}active{% endif %}" href="?sort=occurrence_date">Date (Oldest First)</a></li>
+                <li><a class="dropdown-item {% if sort_by == '-risk_score' %}active{% endif %}" href="?sort=-risk_score">Risk Score (Highest First)</a></li>
+                <li><a class="dropdown-item {% if sort_by == 'risk_score' %}active{% endif %}" href="?sort=risk_score">Risk Score (Lowest First)</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-custom">
+            <thead>
+                <tr>
+                    <th>Ref #</th>
+                    <th>Incident Details</th>
+                    <th>Category</th>
+                    <th>Location / Flight</th>
+                    <th>Risk Band</th>
+                    <th>Workflow Status</th>
+                    <th>Investigator</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inc in page_obj %}
+                <tr>
+                    <td class="fw-bold">
+                        <a href="{% url 'incidents:detail' inc.id %}" class="text-decoration-none text-navy">
+                            {{ inc.reference_number }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-truncate" style="max-width: 220px;">
+                            <a href="{% url 'incidents:detail' inc.id %}" class="text-dark text-decoration-none">
+                                {{ inc.title }}
+                            </a>
+                        </div>
+                        <small class="text-muted">{{ inc.occurrence_date|date:"Y-m-d H:i" }} UTC</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">{{ inc.get_incident_type_display }}</span>
+                    </td>
+                    <td>
+                        <div class="small fw-semibold">{{ inc.location }}</div>
+                        {% if inc.flight_number or inc.aircraft_registration %}
+                        <small class="text-muted">{{ inc.flight_number|default:"-" }} / {{ inc.aircraft_registration|default:"-" }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {{ inc.risk_badge_class }}">
+                            {{ inc.risk_level }} ({{ inc.risk_score }})
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {{ inc.status_badge_class }}">
+                            {{ inc.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if inc.assigned_investigator %}
+                        <span class="small fw-semibold text-navy"><i class="bi bi-person-badge me-1"></i>{{ inc.assigned_investigator.username }}</span>
+                        {% else %}
+                        <span class="small text-muted italic">Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a href="{% url 'incidents:detail' inc.id %}" class="btn btn-outline-primary btn-sm" title="View Full Dossier">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        {% if is_safety_manager or is_administrator or inc.reporter == request.user %}
+                        <a href="{% url 'incidents:edit' inc.id %}" class="btn btn-outline-secondary btn-sm" title="Edit Incident">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'reports:incident_pdf' inc.id %}" class="btn btn-outline-danger btn-sm" title="Download PDF Dossier">
+                            <i class="bi bi-file-pdf"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="bi bi-search fs-1 d-block text-secondary mb-2"></i>
+                        <h5>No incidents match the search criteria</h5>
+                        <p class="small mb-3">Adjust your filters or submit a new aviation safety incident report.</p>
+                        <a href="{% url 'incidents:report' %}" class="btn btn-primary btn-sm">Report Incident</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="card-footer bg-white border-top py-3">
+        {% include 'partials/_pagination.html' %}
+    </div>
+</div>
+{% endblock %}

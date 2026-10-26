@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Action Item (CAPA) &bull; SkyShield{% endblock %}
+{% block page_title %}Assign Corrective / Preventive Action{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-navy text-white py-3" style="background-color: #0B1E36;">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-shield-plus text-info me-2"></i>New Corrective & Preventive Action (CAPA)
+                </h5>
+                <small class="text-white-50">Incident #{{ incident.reference_number }} &bull; {{ incident.title }}</small>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Action Classification *</label>
+                        {{ form.action_type }}
+                        {% if form.action_type.errors %}<div class="text-danger small">{{ form.action_type.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Action Title *</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<div class="text-danger small">{{ form.title.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Detailed Specification & Execution Plan *</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<div class="text-danger small">{{ form.description.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Designated Responsible Assignee *</label>
+                            {{ form.responsible_user }}
+                            {% if form.responsible_user.errors %}<div class="text-danger small">{{ form.responsible_user.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Priority Level *</label>
+                            {{ form.priority }}
+                            {% if form.priority.errors %}<div class="text-danger small">{{ form.priority.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Target Due Date *</label>
+                            {{ form.due_date }}
+                            {% if form.due_date.errors %}<div class="text-danger small">{{ form.due_date.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between pt-3 border-top">
+                        <a href="{% url 'incidents:detail' incident.id %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary fw-semibold">
+                            <i class="bi bi-check2-circle me-1"></i>Assign Action
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

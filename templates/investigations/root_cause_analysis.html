@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}5-Whys Root Cause Analysis &bull; SkyShield{% endblock %}
+{% block page_title %}Structured 5-Whys Root Cause Analysis (RCA){% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-navy text-white py-3" style="background-color: #0B1E36;">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-diagram-2 text-info me-2"></i>Structured 5-Whys Root Cause Analysis
+                </h5>
+                <small class="text-white-50">Incident #{{ incident.reference_number }} &bull; {{ incident.title }}</small>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <div class="alert alert-info d-flex align-items-center mb-4">
+                    <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                    <div class="small">
+                        <strong>Aviation Safety Method:</strong> The 5-Whys analysis systematically drills past immediate human actions or equipment glitches down to the latent organizational defects and management safety systems that permitted the hazard to emerge.
+                    </div>
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-navy">Problem Statement (What event occurred?) *</label>
+                        {{ form.problem_statement }}
+                        {% if form.problem_statement.errors %}<div class="text-danger small">{{ form.problem_statement.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="p-3 bg-light rounded border mb-4">
+                        <h6 class="fw-bold text-navy mb-3"><i class="bi bi-arrow-down-circle text-primary me-2"></i>Causal Chain: 5 Levels of Why</h6>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Level 1: Why did the problem directly occur? (Immediate Trigger) *</label>
+                            {{ form.why_1 }}
+                            {% if form.why_1.errors %}<div class="text-danger small">{{ form.why_1.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Level 2: Why did the condition in Why #1 exist? (Pre-condition) *</label>
+                            {{ form.why_2 }}
+                            {% if form.why_2.errors %}<div class="text-danger small">{{ form.why_2.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Level 3: Why did the factor in Why #2 occur? (Underlying Factor) *</label>
+                            {{ form.why_3 }}
+                            {% if form.why_3.errors %}<div class="text-danger small">{{ form.why_3.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Level 4: Why did safety barriers fail to stop Why #3? (Barrier Breakdown) *</label>
+                            {{ form.why_4 }}
+                            {% if form.why_4.errors %}<div class="text-danger small">{{ form.why_4.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label small fw-bold text-danger">Level 5: Why did the organizational system allow Why #4? (Latent Systemic Flaw) *</label>
+                            {{ form.why_5 }}
+                            {% if form.why_5.errors %}<div class="text-danger small">{{ form.why_5.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-navy">Synthesized Root Cause Statement *</label>
+                        {{ form.root_cause_summary }}
+                        {% if form.root_cause_summary.errors %}<div class="text-danger small">{{ form.root_cause_summary.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-navy">Preventive Recommendation (Action Plan Foundation) *</label>
+                        {{ form.preventive_recommendation }}
+                        {% if form.preventive_recommendation.errors %}<div class="text-danger small">{{ form.preventive_recommendation.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between pt-3 border-top">
+                        <a href="{% url 'investigations:workspace' incident.id %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Return to Workspace
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+                            <i class="bi bi-check2-circle me-1"></i>Save 5-Whys Analysis
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
