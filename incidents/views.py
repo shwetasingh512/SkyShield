@@ -116,6 +116,157 @@ def incident_create_view(request):
     Submits a new aviation incident or hazard report.
     Available to all authenticated users.
     """
+    if request.method == "POST":
+        # Bind main incident form (no file fields)
+        form = IncidentReportForm(request.POST)
+        # Use a prefix for the attachment form to avoid name collisions with
+        # the main form's "description" field.
+        attachment_form = IncidentAttachmentForm(request.POST, request.FILES, prefix="attachment")
+
+        if form.is_valid():
+            incident = form.save(commit=False)
+            incident.reporter = request.user
+            incident.save()
+
+            # Process optional attachment if provided and valid
+            if attachment_form.is_valid() and attachment_form.cleaned_data.get("file"):
+                uploaded = attachment_form.cleaned_data["file"]
+                IncidentAttachment.objects.create(
+                    incident=incident,
+                    file=uploaded,
+                    filename=uploaded.name,
+                    file_size=uploaded.size,
+                    file_type=getattr(uploaded, "content_type", "application/octet-stream"),
+                    description=attachment_form.cleaned_data.get("description", ""),
+                    uploaded_by=request.user,
+                )
+                messages.success(request, "Evidence file uploaded successfully.")
+
+            messages.success(request, "Incident reported successfully.")
+            log_audit_action(
+                user=request.user,
+                action="CREATE",
+                entity_type="Incident",
+                entity_id=str(incident.id),
+                summary=f"Incident {incident.reference_number} created.",
+                request=request,
+            )
+            return redirect("incidents:detail", incident_id=incident.id)
+        else:
+            # If the main form is invalid, re-render with both forms to show errors.
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = IncidentReportForm()
+        attachment_form = IncidentAttachmentForm(prefix="attachment")
+
+    return render(request, "incidents/incident_form.html", {
+        "form": form,
+        "attachment_form": attachment_form,
+        "is_create": True,
+    })
+    """
+    Submits a new aviation incident or hazard report.
+    Available to all authenticated users.
+    """
+    if request.method == 'POST':
+        form = IncidentReportForm(request.POST, request.FILES)
+        attachment_form = IncidentAttachmentForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            incident = form.save(commit=False)
+            incident.reporter = request.user
+            incident.save()
+
+            # Handle optional attachment if provided and valid
+            if attachment_form.is_valid() and attachment_form.cleaned_data.get('file'):
+                uploaded_file = attachment_form.cleaned_data['file']
+                IncidentAttachment.objects.create(
+                    incident=incident,
+                    file=uploaded_file,
+                    filename=uploaded_file.name,
+                    file_size=uploaded_file.size,
+                    file_type=getattr(uploaded_file, 'content_type', 'application/octet-stream'),
+                    description=attachment_form.cleaned_data.get('description', ''),
+                    uploaded_by=request.user,
+                )
+                messages.success(request, "Evidence file uploaded successfully.")
+
+            messages.success(request, "Incident reported successfully.")
+            log_audit_action(
+                user=request.user,
+                action='CREATE',
+                entity_type='Incident',
+                entity_id=str(incident.id),
+                summary=f"Incident {incident.reference_number} created.",
+                request=request,
+            )
+            return redirect('incidents:detail', incident_id=incident.id)
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = IncidentReportForm()
+        attachment_form = IncidentAttachmentForm()
+
+    return render(request, 'incidents/incident_form.html', {
+        'form': form,
+        'attachment_form': attachment_form,
+        'is_create': True,
+    })
+    """
+    Submits a new aviation incident or hazard report.
+    Available to all authenticated users.
+    """
+    if request.method == 'POST':
+        form = IncidentReportForm(request.POST)
+        # Use a prefix for the attachment form to avoid field name collisions
+        attachment_form = IncidentAttachmentForm(request.POST, request.FILES, prefix='attachment')
+
+        if form.is_valid():
+            incident = form.save(commit=False)
+            incident.reporter = request.user
+            incident.save()
+
+            # Handle optional initial attachment if provided and valid
+            if attachment_form.is_valid():
+                uploaded_file = attachment_form.cleaned_data['file']
+                IncidentAttachment.objects.create(
+                    incident=incident,
+                    file=uploaded_file,
+                    filename=uploaded_file.name,
+                    file_size=uploaded_file.size,
+                    file_type=getattr(uploaded_file, 'content_type', 'application/octet-stream'),
+                    description=attachment_form.cleaned_data.get('description', ''),
+                    uploaded_by=request.user,
+                )
+                messages.success(request, "Evidence file uploaded successfully.")
+            # No attachment is also fine; just proceed
+
+            messages.success(request, "Incident reported successfully.")
+            log_audit_action(
+                user=request.user,
+                action='CREATE',
+                entity_type='Incident',
+                entity_id=str(incident.id),
+                summary=f"Incident {incident.reference_number} created.",
+                request=request,
+            )
+            return redirect('incidents:detail', incident_id=incident.id)
+        else:
+            # Preserve attachment form for re-rendering with errors
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = IncidentReportForm()
+        attachment_form = IncidentAttachmentForm(prefix='attachment')
+
+    return render(request, 'incidents/incident_form.html', {
+        'form': form,
+        'attachment_form': attachment_form,
+        'is_create': True,
+    })
+    """
+    Submits a new aviation incident or hazard report.
+    Available to all authenticated users.
+    """
     if request.method == 'POST':
         form = IncidentReportForm(request.POST)
         attachment_form = IncidentAttachmentForm(request.POST, request.FILES)

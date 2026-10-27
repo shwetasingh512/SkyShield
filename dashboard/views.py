@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from datetime import timezone as datetime_timezone
 from django.db.models import Count, Q
 from incidents.models import Incident
 from investigations.models import Investigation
@@ -91,8 +92,8 @@ def dashboard_view(request):
         else:
             next_m = month + 1
             next_y = year
-        m_start = timezone.datetime(year, month, 1, tzinfo=timezone.utc)
-        m_end = timezone.datetime(next_y, next_m, 1, tzinfo=timezone.utc)
+        m_start = timezone.datetime(year, month, 1, tzinfo=datetime_timezone.utc)
+        m_end = timezone.datetime(next_y, next_m, 1, tzinfo=datetime_timezone.utc)
         cnt = incidents_qs.filter(occurrence_date__gte=m_start, occurrence_date__lt=m_end).count()
         trend_data.append(cnt)
 
